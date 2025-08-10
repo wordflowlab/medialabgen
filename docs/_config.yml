@@ -1,0 +1,9 @@
+theme: jekyll-theme-cayman
+title: 影海拾贝 - MediaLabGen
+description: 智能视频内容提取与转换平台
+show_downloads: false
+google_analytics: 
+markdown: kramdown
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
