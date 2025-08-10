@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>影海拾贝 - PC端功能原型 (浅色主题)</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Inter Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Alpine.js for interactions -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <script>
+        // Tailwind Config with light theme for shadcn/ui
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        border: "hsl(214.3 31.8% 91.4%)",
+                        input: "hsl(214.3 31.8% 91.4%)",
+                        ring: "hsl(221.2 83.2% 53.3%)",
+                        background: "hsl(0 0% 100%)",
+                        foreground: "hsl(222.2 84% 4.9%)",
+                        primary: {
+                            DEFAULT: "hsl(221.2 83.2% 53.3%)",
+                            foreground: "hsl(210 40% 98%)"
+                        },
+                        secondary: {
+                            DEFAULT: "hsl(210 40% 96.1%)",
+                            foreground: "hsl(222.2 47.4% 11.2%)"
+                        },
+                        destructive: {
+                            DEFAULT: "hsl(0 84.2% 60.2%)",
+                            foreground: "hsl(210 40% 98%)"
+                        },
+                        muted: {
+                            DEFAULT: "hsl(210 40% 96.1%)",
+                            foreground: "hsl(215.4 16.3% 46.9%)"
+                        },
+                        accent: {
+                            DEFAULT: "hsl(210 40% 96.1%)",
+                            foreground: "hsl(222.2 47.4% 11.2%)"
+                        },
+                        popover: {
+                            DEFAULT: "hsl(0 0% 100%)",
+                            foreground: "hsl(222.2 84% 4.9%)"
+                        },
+                        card: {
+                            DEFAULT: "hsl(0 0% 100%)",
+                            foreground: "hsl(222.2 84% 4.9%)"
+                        }
+                    },
+                    borderRadius: {
+                        lg: "0.5rem",
+                        md: "0.375rem",
+                        sm: "0.25rem"
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'Noto Sans SC', 'system-ui', 'sans-serif']
+                    },
+                    boxShadow: {
+                        'sm': '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+                        'DEFAULT': '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
+                        'md': '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+                        'lg': '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
+                        'xl': '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        /* Base Styles */
+        * {
+            border-color: hsl(214.3 31.8% 91.4%);
+        }
+        
+        body {
+            font-family: 'Inter', 'Noto Sans SC', system-ui, sans-serif;
+            background-color: #fafafa;
+            color: hsl(222.2 84% 4.9%);
+            min-height: 100vh;
+        }
+        
+        /* Custom scrollbar for light theme */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        
+        /* Button hover effects */
+        .btn-primary {
+            background: hsl(221.2 83.2% 53.3%);
+            color: white;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary:hover {
+            background: hsl(221.2 83.2% 45%);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            transform: translateY(-1px);
+        }
+        
+        .btn-secondary {
+            background: white;
+            border: 1px solid hsl(214.3 31.8% 91.4%);
+            color: hsl(222.2 84% 4.9%);
+            transition: all 0.2s;
+        }
+        
+        .btn-secondary:hover {
+            background: hsl(210 40% 96.1%);
+            border-color: hsl(214.3 31.8% 85%);
+        }
+        
+        /* Card hover effects */
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        
+        .card-hover:hover {
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+            transform: translateY(-2px);
+        }
+        
+        /* Loading animation */
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+        
+        .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        
+        /* Status indicators */
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        
+        .status-success { background-color: #10b981; }
+        .status-warning { background-color: #f59e0b; }
+        .status-error { background-color: #ef4444; }
+        .status-info { background-color: #3b82f6; }
+    </style>
+</head>
+<body class="bg-background text-foreground">
+    <div x-data="app()" x-init="init()">
+        <!-- Navigation -->
+        <header class="sticky top-0 z-50 w-full bg-white border-b shadow-sm">
+            <div class="container mx-auto px-4">
+                <div class="flex h-16 items-center justify-between">
+                    <!-- Logo and Navigation -->
+                    <div class="flex items-center space-x-8">
+                        <a href="#" class="flex items-center space-x-2">
+                            <span class="text-2xl">🌊</span>
+                            <span class="font-bold text-lg">影海拾贝</span>
+                        </a>
+                        <nav class="hidden md:flex items-center space-x-6">
+                            <a href="#" @click="currentPage = 'dashboard'" 
+                               :class="currentPage === 'dashboard' ? 'text-primary font-medium' : 'text-muted-foreground hover:text-foreground'"
+                               class="text-sm transition-colors">工作台</a>
+                            <a href="#" @click="currentPage = 'process'" 
+                               :class="currentPage === 'process' ? 'text-primary font-medium' : 'text-muted-foreground hover:text-foreground'"
+                               class="text-sm transition-colors">视频处理</a>
+                            <a href="#" @click="currentPage = 'projects'" 
+                               :class="currentPage === 'projects' ? 'text-primary font-medium' : 'text-muted-foreground hover:text-foreground'"
+                               class="text-sm transition-colors">项目管理</a>
+                            <a href="#" @click="currentPage = 'templates'" 
+                               :class="currentPage === 'templates' ? 'text-primary font-medium' : 'text-muted-foreground hover:text-foreground'"
+                               class="text-sm transition-colors">模板中心</a>
+                        </nav>
+                    </div>
+                    
+                    <!-- Right side -->
+                    <div class="flex items-center space-x-4">
+                        <!-- Search -->
+                        <div class="relative hidden md:block">
+                            <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"></i>
+                            <input type="search" 
+                                   placeholder="搜索视频或项目..." 
+                                   class="h-10 w-64 rounded-lg border bg-white pl-10 pr-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                        </div>
+                        
+                        <!-- Notifications -->
+                        <button class="relative p-2 rounded-lg hover:bg-muted transition-colors">
+                            <i data-lucide="bell" class="h-5 w-5 text-muted-foreground"></i>
+                            <span class="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
+                        </button>
+                        
+                        <!-- User menu -->
+                        <button class="flex items-center space-x-2 p-2 rounded-lg hover:bg-muted transition-colors">
+                            <div class="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                                <span class="text-sm font-medium text-primary">U</span>
+                            </div>
+                            <i data-lucide="chevron-down" class="h-4 w-4 text-muted-foreground"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <!-- Main Content -->
+        <main class="container mx-auto px-4 py-8">
+            <!-- Dashboard Page -->
+            <div x-show="currentPage === 'dashboard'" x-transition>
+                <!-- Page Header -->
+                <div class="mb-8">
+                    <h1 class="text-3xl font-bold mb-2">欢迎回来！</h1>
+                    <p class="text-muted-foreground">今天是个处理视频的好日子 🎬</p>
+                </div>
+                
+                <!-- Stats Cards -->
+                <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
+                    <div class="bg-white rounded-lg border p-6 card-hover">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="p-2 bg-blue-50 rounded-lg">
+                                <i data-lucide="video" class="h-5 w-5 text-blue-600"></i>
+                            </div>
+                            <span class="status-dot status-success"></span>
+                        </div>
+                        <div class="text-2xl font-bold mb-1">127</div>
+                        <p class="text-sm text-muted-foreground">处理视频</p>
+                        <p class="text-xs text-green-600 mt-2">↑ 12% 本月</p>
+                    </div>
+                    
+                    <div class="bg-white rounded-lg border p-6 card-hover">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="p-2 bg-purple-50 rounded-lg">
+                                <i data-lucide="file-text" class="h-5 w-5 text-purple-600"></i>
+                            </div>
+                            <span class="status-dot status-info"></span>
+                        </div>
+                        <div class="text-2xl font-bold mb-1">342</div>
+                        <p class="text-sm text-muted-foreground">生成内容</p>
+                        <p class="text-xs text-muted-foreground mt-2">文章/PPT/脑图</p>
+                    </div>
+                    
+                    <div class="bg-white rounded-lg border p-6 card-hover">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="p-2 bg-green-50 rounded-lg">
+                                <i data-lucide="activity" class="h-5 w-5 text-green-600"></i>
+                            </div>
+                            <span class="status-dot status-warning"></span>
+                        </div>
+                        <div class="text-2xl font-bold mb-1">2,845</div>
+                        <p class="text-sm text-muted-foreground">API调用</p>
+                        <p class="text-xs text-orange-600 mt-2">剩余 7,155</p>
+                    </div>
+                    
+                    <div class="bg-white rounded-lg border p-6 card-hover">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="p-2 bg-amber-50 rounded-lg">
+                                <i data-lucide="hard-drive" class="h-5 w-5 text-amber-600"></i>
+                            </div>
+                            <span class="status-dot status-info"></span>
+                        </div>
+                        <div class="text-2xl font-bold mb-1">12.5 GB</div>
+                        <p class="text-sm text-muted-foreground">存储空间</p>
+                        <p class="text-xs text-muted-foreground mt-2">总计 50 GB</p>
+                    </div>
+                </div>
+                
+                <!-- Quick Actions -->
+                <div class="bg-white rounded-lg border p-6 mb-8">
+                    <h2 class="text-lg font-semibold mb-4">快速开始</h2>
+                    <div class="grid gap-4 md:grid-cols-3">
+                        <button @click="currentPage = 'process'; startNewProcess()" 
+                                class="flex flex-col items-center justify-center h-32 rounded-lg border-2 border-dashed border-gray-300 hover:border-primary hover:bg-primary/5 transition-all group">
+                            <div class="p-3 bg-primary/10 rounded-full mb-3 group-hover:bg-primary/20 transition-colors">
+                                <i data-lucide="plus-circle" class="h-6 w-6 text-primary"></i>
+                            </div>
+                            <div class="text-sm font-medium">处理新视频</div>
+                            <div class="text-xs text-muted-foreground mt-1">粘贴URL开始</div>
+                        </button>
+                        
+                        <button class="flex flex-col items-center justify-center h-32 rounded-lg border-2 border-dashed border-gray-300 hover:border-primary hover:bg-primary/5 transition-all group">
+                            <div class="p-3 bg-purple-100 rounded-full mb-3 group-hover:bg-purple-200 transition-colors">
+                                <i data-lucide="upload" class="h-6 w-6 text-purple-600"></i>
+                            </div>
+                            <div class="text-sm font-medium">批量导入</div>
+                            <div class="text-xs text-muted-foreground mt-1">CSV/文本列表</div>
+                        </button>
+                        
+                        <button class="flex flex-col items-center justify-center h-32 rounded-lg border-2 border-dashed border-gray-300 hover:border-primary hover:bg-primary/5 transition-all group">
+                            <div class="p-3 bg-amber-100 rounded-full mb-3 group-hover:bg-amber-200 transition-colors">
+                                <i data-lucide="sparkles" class="h-6 w-6 text-amber-600"></i>
+                            </div>
+                            <div class="text-sm font-medium">AI推荐</div>
+                            <div class="text-xs text-muted-foreground mt-1">发现优质内容</div>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Recent Projects -->
+                <div class="bg-white rounded-lg border">
+                    <div class="p-6 border-b">
+                        <div class="flex items-center justify-between">
+                            <h2 class="text-lg font-semibold">最近项目</h2>
+                            <button @click="currentPage = 'projects'" 
+                                    class="text-sm text-primary hover:text-primary/80 transition-colors">
+                                查看全部 →
+                            </button>
+                        </div>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <template x-for="project in recentProjects" :key="project.id">
+                            <div class="flex items-center space-x-4 p-4 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors">
+                                <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
+                                    <i :data-lucide="project.icon" class="h-6 w-6 text-primary"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h3 class="text-sm font-medium" x-text="project.title"></h3>
+                                    <p class="text-xs text-muted-foreground mt-1" x-text="project.description"></p>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-xs text-muted-foreground" x-text="project.time"></div>
+                                    <div class="mt-1">
+                                        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
+                                              :class="project.status === 'completed' ? 'bg-green-50 text-green-700' : 
+                                                     project.status === 'processing' ? 'bg-blue-50 text-blue-700' : 
+                                                     'bg-yellow-50 text-yellow-700'"
+                                              x-text="project.statusText"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Video Processing Page -->
+            <div x-show="currentPage === 'process'" x-transition>
+                <div class="mx-auto max-w-4xl">
+                    <!-- Step Indicator -->
+                    <div class="mb-8">
+                        <div class="flex items-center justify-between">
+                            <template x-for="(step, index) in processSteps" :key="index">
+                                <div class="flex items-center flex-1">
+                                    <div class="flex h-10 w-10 items-center justify-center rounded-full transition-all"
+                                         :class="currentStep >= index + 1 ? 'bg-primary text-white' : 'bg-gray-200 text-gray-500'">
+                                        <span x-text="index + 1" class="text-sm font-semibold"></span>
+                                    </div>
+                                    <div x-show="index < processSteps.length - 1" 
+                                         class="flex-1 mx-2 h-0.5 transition-colors"
+                                         :class="currentStep > index + 1 ? 'bg-primary' : 'bg-gray-200'"></div>
+                                </div>
+                            </template>
+                        </div>
+                        <div class="mt-2 flex justify-between">
+                            <template x-for="step in processSteps" :key="step">
+                                <span class="text-xs text-muted-foreground" x-text="step"></span>
+                            </template>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 1: Input URL -->
+                    <div x-show="currentStep === 1" x-transition>
+                        <div class="bg-white rounded-lg border p-8">
+                            <h2 class="text-xl font-semibold mb-2">输入视频链接</h2>
+                            <p class="text-sm text-muted-foreground mb-6">
+                                支持 YouTube、TED、B站、Vimeo 等主流平台
+                            </p>
+                            
+                            <div class="space-y-4">
+                                <div class="relative">
+                                    <i data-lucide="link" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"></i>
+                                    <input type="url" 
+                                           x-model="videoUrl"
+                                           @input="validateUrl()"
+                                           placeholder="https://www.youtube.com/watch?v=..." 
+                                           class="h-12 w-full rounded-lg border bg-white pl-10 pr-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                                </div>
+                                
+                                <!-- URL validation message -->
+                                <div x-show="urlValidation.show" 
+                                     :class="urlValidation.valid ? 'text-green-600' : 'text-red-600'"
+                                     class="text-sm flex items-center space-x-1">
+                                    <i :data-lucide="urlValidation.valid ? 'check-circle' : 'alert-circle'" 
+                                       class="h-3 w-3"></i>
+                                    <span x-text="urlValidation.message"></span>
+                                </div>
+                                
+                                <!-- Platform badges -->
+                                <div class="flex flex-wrap gap-2">
+                                    <span class="inline-flex items-center rounded-full bg-red-50 px-3 py-1 text-xs font-medium text-red-700">
+                                        YouTube
+                                    </span>
+                                    <span class="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">
+                                        TED
+                                    </span>
+                                    <span class="inline-flex items-center rounded-full bg-pink-50 px-3 py-1 text-xs font-medium text-pink-700">
+                                        Bilibili
+                                    </span>
+                                    <span class="inline-flex items-center rounded-full bg-cyan-50 px-3 py-1 text-xs font-medium text-cyan-700">
+                                        Vimeo
+                                    </span>
+                                </div>
+                                
+                                <div class="flex justify-between pt-4">
+                                    <button class="btn-secondary px-6 py-2.5 rounded-lg text-sm font-medium">
+                                        <i data-lucide="upload" class="inline h-4 w-4 mr-2"></i>
+                                        上传本地文件
+                                    </button>
+                                    <button @click="analyzeVideo()" 
+                                            :disabled="!urlValidation.valid"
+                                            class="btn-primary px-6 py-2.5 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed">
+                                        下一步
+                                        <i data-lucide="arrow-right" class="inline h-4 w-4 ml-2"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 2: Analyze -->
+                    <div x-show="currentStep === 2" x-transition>
+                        <div class="bg-white rounded-lg border p-8">
+                            <h2 class="text-xl font-semibold mb-6">视频分析</h2>
+                            
+                            <!-- Video Preview -->
+                            <div class="mb-6 rounded-lg border bg-gray-50 p-4">
+                                <div class="aspect-video bg-gray-200 rounded-lg flex items-center justify-center mb-4">
+                                    <i data-lucide="play-circle" class="h-16 w-16 text-gray-400"></i>
+                                </div>
+                                <div class="space-y-2">
+                                    <h3 class="font-medium">How AI Will Transform Education</h3>
+                                    <div class="flex items-center space-x-4 text-sm text-muted-foreground">
+                                        <span class="flex items-center">
+                                            <i data-lucide="clock" class="mr-1 h-3 w-3"></i>
+                                            14:23
+                                        </span>
+                                        <span class="flex items-center">
+                                            <i data-lucide="subtitles" class="mr-1 h-3 w-3"></i>
+                                            英文字幕
+                                        </span>
+                                        <span class="flex items-center">
+                                            <i data-lucide="user" class="mr-1 h-3 w-3"></i>
+                                            TED
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Analysis Progress -->
+                            <div class="space-y-4">
+                                <div class="space-y-2">
+                                    <div class="flex items-center justify-between text-sm">
+                                        <span>提取字幕</span>
+                                        <span class="text-green-600">100%</span>
+                                    </div>
+                                    <div class="h-2 rounded-full bg-gray-200">
+                                        <div class="h-2 rounded-full bg-green-500" style="width: 100%"></div>
+                                    </div>
+                                </div>
+                                
+                                <div class="space-y-2">
+                                    <div class="flex items-center justify-between text-sm">
+                                        <span>识别章节</span>
+                                        <span class="text-blue-600">75%</span>
+                                    </div>
+                                    <div class="h-2 rounded-full bg-gray-200">
+                                        <div class="h-2 rounded-full bg-blue-500 animate-pulse" style="width: 75%"></div>
+                                    </div>
+                                </div>
+                                
+                                <div class="space-y-2">
+                                    <div class="flex items-center justify-between text-sm">
+                                        <span>提取关键帧</span>
+                                        <span class="text-muted-foreground">50%</span>
+                                    </div>
+                                    <div class="h-2 rounded-full bg-gray-200">
+                                        <div class="h-2 rounded-full bg-gray-400" style="width: 50%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex justify-between pt-6">
+                                <button @click="currentStep = 1" 
+                                        class="btn-secondary px-6 py-2.5 rounded-lg text-sm font-medium">
+                                    <i data-lucide="arrow-left" class="inline h-4 w-4 mr-2"></i>
+                                    上一步
+                                </button>
+                                <button @click="currentStep = 3" 
+                                        class="btn-primary px-6 py-2.5 rounded-lg text-sm font-medium">
+                                    下一步
+                                    <i data-lucide="arrow-right" class="inline h-4 w-4 ml-2"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 3: Configure -->
+                    <div x-show="currentStep === 3" x-transition>
+                        <div class="bg-white rounded-lg border p-8">
+                            <h2 class="text-xl font-semibold mb-6">选择输出格式</h2>
+                            
+                            <!-- Output Format Tabs -->
+                            <div class="mb-6">
+                                <div class="grid grid-cols-4 gap-4">
+                                    <template x-for="format in outputFormats" :key="format.id">
+                                        <button @click="selectedFormat = format.id"
+                                                :class="selectedFormat === format.id ? 'border-primary bg-primary/5' : 'border-gray-200 bg-white'"
+                                                class="rounded-lg border-2 p-4 hover:border-primary/50 transition-all">
+                                            <i :data-lucide="format.icon" class="h-8 w-8 mx-auto mb-2"
+                                               :class="selectedFormat === format.id ? 'text-primary' : 'text-gray-400'"></i>
+                                            <div class="text-sm font-medium" x-text="format.name"></div>
+                                            <div class="text-xs text-muted-foreground mt-1" x-text="format.description"></div>
+                                        </button>
+                                    </template>
+                                </div>
+                            </div>
+                            
+                            <!-- Format Options -->
+                            <div class="rounded-lg border bg-gray-50 p-6 space-y-4">
+                                <h3 class="font-medium mb-4">生成选项</h3>
+                                
+                                <!-- Article Options (shown when article is selected) -->
+                                <div x-show="selectedFormat === 'article'" class="space-y-4">
+                                    <div>
+                                        <label class="text-sm font-medium mb-2 block">文章长度</label>
+                                        <div class="grid grid-cols-3 gap-2">
+                                            <button class="px-4 py-2 rounded-lg border bg-white hover:border-primary hover:bg-primary/5 text-sm transition-all">精简 (500字)</button>
+                                            <button class="px-4 py-2 rounded-lg border-2 border-primary bg-primary/5 text-sm font-medium">适中 (1000字)</button>
+                                            <button class="px-4 py-2 rounded-lg border bg-white hover:border-primary hover:bg-primary/5 text-sm transition-all">详细 (2000字+)</button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="text-sm font-medium mb-2 block">文章风格</label>
+                                        <div class="grid grid-cols-3 gap-2">
+                                            <button class="px-4 py-2 rounded-lg border bg-white hover:border-primary hover:bg-primary/5 text-sm transition-all">专业严谨</button>
+                                            <button class="px-4 py-2 rounded-lg border-2 border-primary bg-primary/5 text-sm font-medium">通俗易懂</button>
+                                            <button class="px-4 py-2 rounded-lg border bg-white hover:border-primary hover:bg-primary/5 text-sm transition-all">生动有趣</button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="text-sm font-medium mb-2 block">包含内容</label>
+                                        <div class="space-y-2">
+                                            <label class="flex items-center space-x-2">
+                                                <input type="checkbox" checked class="rounded border-gray-300 text-primary focus:ring-primary">
+                                                <span class="text-sm">核心观点提炼</span>
+                                            </label>
+                                            <label class="flex items-center space-x-2">
+                                                <input type="checkbox" checked class="rounded border-gray-300 text-primary focus:ring-primary">
+                                                <span class="text-sm">案例分析</span>
+                                            </label>
+                                            <label class="flex items-center space-x-2">
+                                                <input type="checkbox" checked class="rounded border-gray-300 text-primary focus:ring-primary">
+                                                <span class="text-sm">总结与展望</span>
+                                            </label>
+                                            <label class="flex items-center space-x-2">
+                                                <input type="checkbox" class="rounded border-gray-300 text-primary focus:ring-primary">
+                                                <span class="text-sm">相关引用</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex justify-between pt-6">
+                                <button @click="currentStep = 2" 
+                                        class="btn-secondary px-6 py-2.5 rounded-lg text-sm font-medium">
+                                    <i data-lucide="arrow-left" class="inline h-4 w-4 mr-2"></i>
+                                    上一步
+                                </button>
+                                <button @click="currentStep = 4; generateContent()" 
+                                        class="btn-primary px-6 py-2.5 rounded-lg text-sm font-medium">
+                                    开始生成
+                                    <i data-lucide="sparkles" class="inline h-4 w-4 ml-2"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 4: Generate -->
+                    <div x-show="currentStep === 4" x-transition>
+                        <div class="bg-white rounded-lg border p-8">
+                            <h2 class="text-xl font-semibold mb-6">生成内容</h2>
+                            
+                            <!-- Generation Progress -->
+                            <div class="space-y-6" x-show="!generationComplete">
+                                <div class="rounded-lg border bg-blue-50 p-6">
+                                    <div class="flex items-center space-x-3 mb-4">
+                                        <div class="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+                                        <span class="text-sm font-medium">AI 正在生成内容...</span>
+                                    </div>
+                                    
+                                    <div class="space-y-3">
+                                        <div class="flex items-center space-x-2">
+                                            <i data-lucide="check-circle" class="h-4 w-4 text-green-600"></i>
+                                            <span class="text-sm">提取视频内容</span>
+                                        </div>
+                                        <div class="flex items-center space-x-2">
+                                            <i data-lucide="check-circle" class="h-4 w-4 text-green-600"></i>
+                                            <span class="text-sm">理解核心观点</span>
+                                        </div>
+                                        <div class="flex items-center space-x-2">
+                                            <div class="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                                            <span class="text-sm">生成文章内容...</span>
+                                        </div>
+                                        <div class="flex items-center space-x-2 opacity-50">
+                                            <i data-lucide="circle" class="h-4 w-4 text-gray-400"></i>
+                                            <span class="text-sm">优化排版格式</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex items-center justify-center text-sm text-muted-foreground">
+                                    <i data-lucide="info" class="mr-1 h-3 w-3"></i>
+                                    预计剩余时间: 15 秒
+                                </div>
+                            </div>
+                            
+                            <!-- Generated Content -->
+                            <div x-show="generationComplete" class="space-y-6">
+                                <div class="rounded-lg border bg-gray-50 p-6">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <h3 class="text-lg font-semibold">AI教育革命：个性化学习的未来</h3>
+                                        <div class="flex space-x-2">
+                                            <button class="p-2 rounded-lg hover:bg-white transition-colors">
+                                                <i data-lucide="copy" class="h-4 w-4"></i>
+                                            </button>
+                                            <button class="p-2 rounded-lg hover:bg-white transition-colors">
+                                                <i data-lucide="download" class="h-4 w-4"></i>
+                                            </button>
+                                            <button class="p-2 rounded-lg hover:bg-white transition-colors">
+                                                <i data-lucide="share-2" class="h-4 w-4"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="prose prose-sm max-w-none">
+                                        <p>在这个数字化时代，人工智能正在彻底改变教育的面貌。传统的"一刀切"教育模式即将成为历史，取而代之的是高度个性化、自适应的学习体验...</p>
+                                        
+                                        <h4>一、个性化学习路径</h4>
+                                        <p>AI教育的最大优势在于能够为每个学生量身定制学习计划。通过分析学生的学习模式、知识掌握程度和兴趣偏好，AI系统可以动态调整教学内容和节奏...</p>
+                                        
+                                        <h4>二、智能辅导系统</h4>
+                                        <p>24小时在线的AI导师能够随时解答学生的疑问，提供个性化的辅导服务。这不仅大大提高了学习效率，还让优质教育资源变得更加普及...</p>
+                                        
+                                        <h4>三、评估方式革新</h4>
+                                        <p>传统的标准化考试将被持续性评估所取代。AI可以通过学生的日常学习行为和表现，实时评估其掌握程度，提供更加全面和准确的能力画像...</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-4">
+                                        <span class="inline-flex items-center rounded-full bg-green-50 px-3 py-1 text-xs font-medium text-green-700">
+                                            <i data-lucide="check" class="mr-1 h-3 w-3"></i>
+                                            生成完成
+                                        </span>
+                                        <span class="text-sm text-muted-foreground">
+                                            1,235 字 · 预计阅读 5 分钟
+                                        </span>
+                                    </div>
+                                    
+                                    <div class="flex space-x-2">
+                                        <button class="btn-secondary px-4 py-2 rounded-lg text-sm font-medium">
+                                            <i data-lucide="edit" class="inline h-4 w-4 mr-2"></i>
+                                            编辑
+                                        </button>
+                                        <button class="btn-primary px-4 py-2 rounded-lg text-sm font-medium">
+                                            <i data-lucide="save" class="inline h-4 w-4 mr-2"></i>
+                                            保存到项目
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Projects Page -->
+            <div x-show="currentPage === 'projects'" x-transition>
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h1 class="text-2xl font-bold">项目管理</h1>
+                        <p class="text-muted-foreground mt-1">管理您的视频处理项目</p>
+                    </div>
+                    <button class="btn-primary px-4 py-2 rounded-lg text-sm font-medium">
+                        <i data-lucide="plus" class="inline h-4 w-4 mr-2"></i>
+                        新建项目
+                    </button>
+                </div>
+                
+                <!-- Projects Grid -->
+                <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    <template x-for="i in 6" :key="i">
+                        <div class="bg-white rounded-lg border hover:shadow-lg transition-all cursor-pointer card-hover">
+                            <div class="p-6">
+                                <div class="flex items-center justify-between mb-4">
+                                    <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
+                                        <i data-lucide="folder" class="h-6 w-6 text-primary"></i>
+                                    </div>
+                                    <button class="p-2 rounded-lg hover:bg-muted transition-colors">
+                                        <i data-lucide="more-vertical" class="h-4 w-4 text-muted-foreground"></i>
+                                    </button>
+                                </div>
+                                <h3 class="font-semibold mb-2">TED精选集</h3>
+                                <p class="text-sm text-muted-foreground mb-4">收集优质TED演讲，整理成知识库</p>
+                                <div class="flex items-center justify-between text-xs text-muted-foreground">
+                                    <span>12 个视频</span>
+                                    <span>更新于 2 小时前</span>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+            
+            <!-- Templates Page -->
+            <div x-show="currentPage === 'templates'" x-transition>
+                <div class="mb-6">
+                    <h1 class="text-2xl font-bold mb-2">模板中心</h1>
+                    <p class="text-muted-foreground">使用预设模板快速生成内容</p>
+                </div>
+                
+                <!-- Template Categories -->
+                <div class="mb-6">
+                    <div class="flex space-x-2">
+                        <button class="px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium">全部</button>
+                        <button class="px-4 py-2 rounded-lg border hover:bg-muted text-sm transition-colors">文章</button>
+                        <button class="px-4 py-2 rounded-lg border hover:bg-muted text-sm transition-colors">PPT</button>
+                        <button class="px-4 py-2 rounded-lg border hover:bg-muted text-sm transition-colors">思维导图</button>
+                        <button class="px-4 py-2 rounded-lg border hover:bg-muted text-sm transition-colors">报告</button>
+                    </div>
+                </div>
+                
+                <!-- Templates Grid -->
+                <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                    <template x-for="template in templates" :key="template.id">
+                        <div class="bg-white rounded-lg border hover:shadow-lg transition-all cursor-pointer group card-hover">
+                            <div class="p-6">
+                                <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                                    <i :data-lucide="template.icon" class="h-6 w-6 text-primary"></i>
+                                </div>
+                                <h3 class="font-semibold mb-1" x-text="template.name"></h3>
+                                <p class="text-xs text-muted-foreground mb-3" x-text="template.description"></p>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center text-xs text-muted-foreground">
+                                        <i data-lucide="star" class="mr-1 h-3 w-3 fill-current text-yellow-500"></i>
+                                        <span x-text="template.rating"></span>
+                                    </div>
+                                    <span class="text-xs text-muted-foreground" x-text="`使用 ${template.uses} 次`"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </main>
+        
+        <!-- Toast Notifications -->
+        <div x-show="toast.show" 
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 translate-y-2"
+             x-transition:enter-end="opacity-100 translate-y-0"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed bottom-4 right-4 z-50">
+            <div class="rounded-lg bg-white border shadow-lg p-4">
+                <div class="flex items-center space-x-2">
+                    <i :data-lucide="toast.type === 'success' ? 'check-circle' : 'alert-circle'" 
+                       :class="toast.type === 'success' ? 'text-green-600' : 'text-red-600'"
+                       class="h-5 w-5"></i>
+                    <span class="text-sm" x-text="toast.message"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function app() {
+            return {
+                // Page navigation
+                currentPage: 'dashboard',
+                
+                // Process flow
+                currentStep: 1,
+                processSteps: ['输入链接', '分析视频', '配置选项', '生成内容'],
+                videoUrl: '',
+                urlValidation: {
+                    show: false,
+                    valid: false,
+                    message: ''
+                },
+                selectedFormat: 'article',
+                generationComplete: false,
+                
+                // Data
+                recentProjects: [
+                    {
+                        id: 1,
+                        icon: 'video',
+                        title: 'How AI Will Transform Education',
+                        description: 'TED Talk - 14:23',
+                        time: '2小时前',
+                        status: 'completed',
+                        statusText: '已完成'
+                    },
+                    {
+                        id: 2,
+                        icon: 'video',
+                        title: 'The Future of Work',
+                        description: 'YouTube - 18:45',
+                        time: '5小时前',
+                        status: 'processing',
+                        statusText: '处理中'
+                    },
+                    {
+                        id: 3,
+                        icon: 'video',
+                        title: 'Climate Change Solutions',
+                        description: 'B站 - 12:10',
+                        time: '昨天',
+                        status: 'pending',
+                        statusText: '待处理'
+                    }
+                ],
+                
+                outputFormats: [
+                    {
+                        id: 'article',
+                        name: '文章',
+                        icon: 'file-text',
+                        description: '深度长文'
+                    },
+                    {
+                        id: 'ppt',
+                        name: 'PPT',
+                        icon: 'presentation',
+                        description: '演示文稿'
+                    },
+                    {
+                        id: 'mindmap',
+                        name: '思维导图',
+                        icon: 'git-branch',
+                        description: '知识结构'
+                    },
+                    {
+                        id: 'qa',
+                        name: '问答',
+                        icon: 'message-circle',
+                        description: '智能对话'
+                    }
+                ],
+                
+                templates: [
+                    {
+                        id: 1,
+                        name: '学术论文',
+                        icon: 'graduation-cap',
+                        description: '标准学术格式',
+                        rating: 4.8,
+                        uses: 2300
+                    },
+                    {
+                        id: 2,
+                        name: '商业计划书',
+                        icon: 'briefcase',
+                        description: '完整商业框架',
+                        rating: 4.9,
+                        uses: 1800
+                    },
+                    {
+                        id: 3,
+                        name: '项目总结',
+                        icon: 'clipboard-check',
+                        description: '简洁项目汇报',
+                        rating: 4.7,
+                        uses: 1500
+                    },
+                    {
+                        id: 4,
+                        name: '读书笔记',
+                        icon: 'book-open',
+                        description: '深度阅读总结',
+                        rating: 4.9,
+                        uses: 1200
+                    }
+                ],
+                
+                // Toast notification
+                toast: {
+                    show: false,
+                    type: 'success',
+                    message: ''
+                },
+                
+                // Methods
+                init() {
+                    // Initialize Lucide icons
+                    this.$nextTick(() => {
+                        lucide.createIcons();
+                    });
+                    
+                    // Watch for page changes to reinitialize icons
+                    this.$watch('currentPage', () => {
+                        this.$nextTick(() => {
+                            lucide.createIcons();
+                        });
+                    });
+                    
+                    // Watch for step changes
+                    this.$watch('currentStep', () => {
+                        this.$nextTick(() => {
+                            lucide.createIcons();
+                        });
+                    });
+                },
+                
+                validateUrl() {
+                    if (!this.videoUrl) {
+                        this.urlValidation.show = false;
+                        return;
+                    }
+                    
+                    const patterns = [
+                        /youtube\.com\/watch\?v=/,
+                        /youtu\.be\//,
+                        /ted\.com\/talks/,
+                        /bilibili\.com\/video/,
+                        /vimeo\.com/
+                    ];
+                    
+                    const isValid = patterns.some(pattern => pattern.test(this.videoUrl));
+                    
+                    this.urlValidation = {
+                        show: true,
+                        valid: isValid,
+                        message: isValid ? '✓ 链接格式正确' : '请输入有效的视频链接'
+                    };
+                },
+                
+                analyzeVideo() {
+                    this.currentStep = 2;
+                    // Simulate analysis process
+                    setTimeout(() => {
+                        this.showToast('视频分析完成', 'success');
+                    }, 2000);
+                },
+                
+                generateContent() {
+                    this.generationComplete = false;
+                    // Simulate generation process
+                    setTimeout(() => {
+                        this.generationComplete = true;
+                        this.showToast('内容生成完成！', 'success');
+                    }, 3000);
+                },
+                
+                startNewProcess() {
+                    this.currentStep = 1;
+                    this.videoUrl = '';
+                    this.urlValidation = {
+                        show: false,
+                        valid: false,
+                        message: ''
+                    };
+                    this.selectedFormat = 'article';
+                    this.generationComplete = false;
+                },
+                
+                showToast(message, type = 'success') {
+                    this.toast = {
+                        show: true,
+                        type: type,
+                        message: message
+                    };
+                    
+                    setTimeout(() => {
+                        this.toast.show = false;
+                    }, 3000);
+                    
+                    this.$nextTick(() => {
+                        lucide.createIcons();
+                    });
+                }
+            }
+        }
+    </script>
+</body>
+</html>

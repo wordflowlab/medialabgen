@@ -1,0 +1,1518 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>影海拾贝 - 终极架构可视化</title>
+    
+    <!-- React 18 and React DOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- React Flow 11 -->
+    <script src="https://unpkg.com/reactflow@11.11.3/dist/umd/index.js"></script>
+    <link href="https://unpkg.com/reactflow@11.11.3/dist/style.css" rel="stylesheet">
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #151932 100%);
+            color: #e1e1e6;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        #root {
+            height: 100vh;
+            width: 100vw;
+            position: relative;
+        }
+        
+        /* React Flow 基础样式 */
+        .react-flow__node {
+            background: transparent !important;
+        }
+        
+        .react-flow__handle {
+            width: 8px;
+            height: 8px;
+            background: #4FC3F7;
+            border: 2px solid #0a0e27;
+            transition: all 0.2s;
+        }
+        
+        .react-flow__handle:hover {
+            transform: scale(1.5);
+        }
+        
+        .react-flow__edge-path {
+            stroke-width: 2;
+            transition: stroke-width 0.2s;
+        }
+        
+        .react-flow__edge-path:hover {
+            stroke-width: 3;
+        }
+        
+        /* 节点基础样式 */
+        .node-base {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 12px;
+            min-width: 180px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+        
+        .node-base:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 12px 40px rgba(79, 195, 247, 0.2);
+        }
+        
+        .node-base.focused {
+            border-color: #4FC3F7;
+            box-shadow: 0 0 0 3px rgba(79, 195, 247, 0.2);
+        }
+        
+        .node-base.dimmed {
+            opacity: 0.3;
+            filter: grayscale(0.5);
+        }
+        
+        /* 可折叠侧边栏 */
+        .side-panel {
+            position: absolute;
+            top: 0;
+            height: 100%;
+            background: linear-gradient(180deg, rgba(10, 14, 39, 0.95), rgba(21, 25, 50, 0.95));
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 100;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .side-panel.left {
+            left: 0;
+            width: 260px;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .side-panel.left.collapsed {
+            transform: translateX(-240px);
+        }
+        
+        .side-panel.right {
+            right: 0;
+            width: 280px;
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .side-panel.right.collapsed {
+            transform: translateX(260px);
+        }
+        
+        .panel-toggle {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 60px;
+            background: linear-gradient(135deg, rgba(79, 195, 247, 0.2), rgba(79, 195, 247, 0.1));
+            border: 1px solid rgba(79, 195, 247, 0.3);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #4FC3F7;
+            transition: all 0.2s;
+        }
+        
+        .panel-toggle:hover {
+            background: linear-gradient(135deg, rgba(79, 195, 247, 0.3), rgba(79, 195, 247, 0.2));
+            width: 24px;
+        }
+        
+        .side-panel.left .panel-toggle {
+            right: -20px;
+            border-radius: 0 8px 8px 0;
+            border-left: none;
+        }
+        
+        .side-panel.right .panel-toggle {
+            left: -20px;
+            border-radius: 8px 0 0 8px;
+            border-right: none;
+        }
+        
+        .panel-content {
+            padding: 20px;
+            height: 100%;
+            overflow-y: auto;
+        }
+        
+        .panel-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            opacity: 0.8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        /* 顶部自动隐藏栏 */
+        .top-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: linear-gradient(180deg, rgba(10, 14, 39, 0.9), transparent);
+            backdrop-filter: blur(10px);
+            z-index: 90;
+            transform: translateY(-55px);
+            transition: transform 0.3s ease;
+        }
+        
+        .top-bar:hover {
+            transform: translateY(0);
+        }
+        
+        .top-bar-trigger {
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            right: 0;
+            height: 15px;
+            cursor: ns-resize;
+        }
+        
+        .top-bar-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            height: 100%;
+            padding: 0 20px;
+        }
+        
+        .top-bar-button {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: #e1e1e6;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .top-bar-button:hover {
+            background: rgba(79, 195, 247, 0.2);
+            border-color: #4FC3F7;
+            transform: translateY(-2px);
+        }
+        
+        /* FAB 浮动操作按钮 */
+        .fab-container {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            z-index: 200;
+        }
+        
+        .fab {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4FC3F7, #2196F3);
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(79, 195, 247, 0.4);
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .fab:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 30px rgba(79, 195, 247, 0.6);
+        }
+        
+        .fab:active {
+            transform: scale(0.95);
+        }
+        
+        .fab-menu {
+            position: absolute;
+            bottom: 70px;
+            right: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s;
+        }
+        
+        .fab-menu.open {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        .fab-menu-item {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #e1e1e6;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform: scale(0);
+            animation: popIn 0.3s forwards;
+        }
+        
+        .fab-menu.open .fab-menu-item:nth-child(1) { animation-delay: 0s; }
+        .fab-menu.open .fab-menu-item:nth-child(2) { animation-delay: 0.05s; }
+        .fab-menu.open .fab-menu-item:nth-child(3) { animation-delay: 0.1s; }
+        .fab-menu.open .fab-menu-item:nth-child(4) { animation-delay: 0.15s; }
+        
+        @keyframes popIn {
+            to { transform: scale(1); }
+        }
+        
+        .fab-menu-item:hover {
+            background: linear-gradient(135deg, rgba(79, 195, 247, 0.3), rgba(79, 195, 247, 0.1));
+            transform: scale(1.1);
+        }
+        
+        .fab-tooltip {
+            position: absolute;
+            right: 60px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(10, 14, 39, 0.95);
+            color: #e1e1e6;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            white-space: nowrap;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .fab-menu-item:hover .fab-tooltip {
+            opacity: 1;
+        }
+        
+        /* 可拖动的迷你地图 */
+        .minimap-container {
+            position: absolute;
+            background: rgba(10, 14, 39, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+            z-index: 150;
+            cursor: move;
+            transition: all 0.3s;
+        }
+        
+        .minimap-container.minimized {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(79, 195, 247, 0.2), rgba(79, 195, 247, 0.1));
+        }
+        
+        .minimap-toggle {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 20px;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border: none;
+            color: #e1e1e6;
+            font-size: 10px;
+            cursor: pointer;
+            z-index: 1;
+        }
+        
+        /* 性能监控小组件 */
+        .perf-widget {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            background: rgba(10, 14, 39, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 12px;
+            z-index: 100;
+            cursor: move;
+            min-width: 180px;
+            transition: all 0.3s;
+        }
+        
+        .perf-widget.minimized {
+            min-width: auto;
+            padding: 8px;
+        }
+        
+        .perf-widget-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .perf-widget-title {
+            font-size: 11px;
+            font-weight: 600;
+            opacity: 0.6;
+            text-transform: uppercase;
+        }
+        
+        .perf-metrics {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+        
+        .perf-metric {
+            text-align: center;
+        }
+        
+        .perf-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: #4FC3F7;
+        }
+        
+        .perf-label {
+            font-size: 9px;
+            opacity: 0.5;
+            margin-top: 2px;
+        }
+        
+        /* 快捷键提示 */
+        .shortcuts-hint {
+            position: absolute;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(10, 14, 39, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 16px;
+            z-index: 300;
+            min-width: 300px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        
+        .shortcuts-hint.visible {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        .shortcuts-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+        
+        .shortcut-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            font-size: 12px;
+        }
+        
+        .shortcut-key {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        
+        /* 焦点模式样式 */
+        .focus-mode .react-flow__edge {
+            opacity: 0.2;
+            transition: opacity 0.3s;
+        }
+        
+        .focus-mode .react-flow__edge.highlighted {
+            opacity: 1;
+            stroke-width: 3;
+        }
+        
+        /* 全屏模式样式 */
+        :fullscreen {
+            background: linear-gradient(135deg, #0a0e27 0%, #151932 100%);
+        }
+        
+        /* 拖拽节点面板 */
+        .draggable-node-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px;
+            margin: 8px 0;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            cursor: grab;
+            transition: all 0.2s;
+        }
+        
+        .draggable-node-item:hover {
+            background: rgba(79, 195, 247, 0.1);
+            border-color: rgba(79, 195, 247, 0.3);
+            transform: translateX(4px);
+        }
+        
+        .draggable-node-item:active {
+            cursor: grabbing;
+            opacity: 0.5;
+        }
+        
+        .node-icon {
+            font-size: 20px;
+        }
+        
+        .node-info {
+            flex: 1;
+        }
+        
+        .node-name {
+            font-size: 13px;
+            font-weight: 500;
+        }
+        
+        .node-desc {
+            font-size: 11px;
+            opacity: 0.6;
+            margin-top: 2px;
+        }
+        
+        /* 服务节点样式 */
+        .service-node {
+            background: linear-gradient(135deg, rgba(79, 195, 247, 0.15), rgba(79, 195, 247, 0.05));
+            border-color: rgba(79, 195, 247, 0.3);
+        }
+        
+        .service-node:hover {
+            box-shadow: 0 8px 32px rgba(79, 195, 247, 0.3);
+        }
+        
+        /* 数据库节点样式 */
+        .database-node {
+            background: linear-gradient(135deg, rgba(255, 183, 77, 0.15), rgba(255, 183, 77, 0.05));
+            border-color: rgba(255, 183, 77, 0.3);
+        }
+        
+        .database-node:hover {
+            box-shadow: 0 8px 32px rgba(255, 183, 77, 0.3);
+        }
+        
+        /* AI节点样式 */
+        .ai-node {
+            background: linear-gradient(135deg, rgba(156, 39, 176, 0.15), rgba(156, 39, 176, 0.05));
+            border-color: rgba(156, 39, 176, 0.3);
+        }
+        
+        .ai-node:hover {
+            box-shadow: 0 8px 32px rgba(156, 39, 176, 0.3);
+        }
+        
+        /* 动画边样式 */
+        @keyframes flow {
+            0% { stroke-dashoffset: 0; }
+            100% { stroke-dashoffset: -20; }
+        }
+        
+        .animated-edge {
+            stroke-dasharray: 5 5;
+            animation: flow 1s linear infinite;
+        }
+        
+        /* 通知样式 */
+        .notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, rgba(76, 175, 80, 0.95), rgba(76, 175, 80, 0.85));
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 13px;
+            z-index: 1000;
+            animation: slideDown 0.3s ease;
+            box-shadow: 0 4px 20px rgba(76, 175, 80, 0.4);
+        }
+        
+        @keyframes slideDown {
+            from {
+                transform: translateX(-50%) translateY(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        /* 预设视图按钮 */
+        .view-presets {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .preset-btn {
+            padding: 6px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            color: #e1e1e6;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .preset-btn:hover {
+            background: rgba(79, 195, 247, 0.2);
+            border-color: #4FC3F7;
+        }
+        
+        .preset-btn.active {
+            background: linear-gradient(135deg, rgba(79, 195, 247, 0.3), rgba(79, 195, 247, 0.2));
+            border-color: #4FC3F7;
+        }
+        
+        /* 响应式节点详情 */
+        .node-detail-level-0 { /* 最小化视图 */ }
+        .node-detail-level-1 { /* 基础视图 */ }
+        .node-detail-level-2 { /* 详细视图 */ }
+        
+        /* 滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(79, 195, 247, 0.3);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(79, 195, 247, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useCallback, useMemo, useEffect, useRef } = React;
+        
+        // React Flow 导入
+        const ReactFlowComponent = window.ReactFlow.default || window.ReactFlow.ReactFlow;
+        const { 
+            Background, 
+            Controls, 
+            MiniMap,
+            Handle,
+            Position,
+            MarkerType,
+            getBezierPath,
+            useNodesState, 
+            useEdgesState,
+            useReactFlow,
+            ReactFlowProvider,
+            addEdge
+        } = window.ReactFlow;
+        
+        // ==================== 自定义节点组件 ====================
+        
+        const BaseNode = ({ data, type, selected, id }) => {
+            const [metrics, setMetrics] = useState(data.metrics || {});
+            const { getZoom } = useReactFlow();
+            const zoom = getZoom();
+            
+            // 根据缩放级别决定显示详情
+            const showDetails = zoom > 0.5;
+            const showMetrics = zoom > 0.7;
+            
+            useEffect(() => {
+                if (data.realtime) {
+                    const interval = setInterval(() => {
+                        setMetrics({
+                            cpu: Math.floor(Math.random() * 40 + 30),
+                            memory: Math.floor(Math.random() * 30 + 50),
+                            requests: Math.floor(Math.random() * 500 + 500)
+                        });
+                    }, 3000);
+                    return () => clearInterval(interval);
+                }
+            }, [data.realtime]);
+            
+            const nodeClass = `node-base ${type}-node ${selected ? 'selected' : ''} ${data.dimmed ? 'dimmed' : ''} ${data.focused ? 'focused' : ''}`;
+            
+            return (
+                <div className={nodeClass}>
+                    <Handle type="target" position={Position.Top} />
+                    
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: showDetails ? '8px' : '0' }}>
+                        <span style={{ fontSize: '18px' }}>{data.icon}</span>
+                        <span style={{ fontSize: '13px', fontWeight: '500' }}>{data.label}</span>
+                        {data.status && (
+                            <div style={{
+                                width: '6px',
+                                height: '6px',
+                                borderRadius: '50%',
+                                background: data.status === 'healthy' ? '#4CAF50' : data.status === 'warning' ? '#FFC107' : '#FF5252',
+                                marginLeft: 'auto'
+                            }} />
+                        )}
+                    </div>
+                    
+                    {showDetails && data.description && (
+                        <div style={{ fontSize: '11px', opacity: 0.6, marginBottom: '6px' }}>
+                            {data.description}
+                        </div>
+                    )}
+                    
+                    {showMetrics && metrics && (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginTop: '8px' }}>
+                            {metrics.cpu && (
+                                <div style={{ textAlign: 'center' }}>
+                                    <div style={{ fontSize: '14px', fontWeight: '600', color: '#4FC3F7' }}>{metrics.cpu}%</div>
+                                    <div style={{ fontSize: '9px', opacity: 0.5 }}>CPU</div>
+                                </div>
+                            )}
+                            {metrics.memory && (
+                                <div style={{ textAlign: 'center' }}>
+                                    <div style={{ fontSize: '14px', fontWeight: '600', color: '#81C784' }}>{metrics.memory}%</div>
+                                    <div style={{ fontSize: '9px', opacity: 0.5 }}>内存</div>
+                                </div>
+                            )}
+                            {metrics.requests && (
+                                <div style={{ textAlign: 'center' }}>
+                                    <div style={{ fontSize: '14px', fontWeight: '600', color: '#FFB74D' }}>{metrics.requests}</div>
+                                    <div style={{ fontSize: '9px', opacity: 0.5 }}>QPS</div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                    
+                    <Handle type="source" position={Position.Bottom} />
+                    {data.sideHandle && <Handle type="source" position={Position.Right} id="side" style={{ background: '#FFC107' }} />}
+                </div>
+            );
+        };
+        
+        // 节点类型映射
+        const nodeTypes = {
+            service: (props) => <BaseNode {...props} type="service" />,
+            database: (props) => <BaseNode {...props} type="database" />,
+            ai: (props) => <BaseNode {...props} type="ai" />,
+        };
+        
+        // ==================== 主应用组件 ====================
+        
+        function Flow() {
+            const reactFlowWrapper = useRef(null);
+            const { project, fitView, getNodes, getEdges, setNodes, setEdges, getZoom, setViewport } = useReactFlow();
+            const [nodes, , onNodesChange] = useNodesState([]);
+            const [edges, , onEdgesChange] = useEdgesState([]);
+            const [leftPanelOpen, setLeftPanelOpen] = useState(true);
+            const [rightPanelOpen, setRightPanelOpen] = useState(false);
+            const [fabMenuOpen, setFabMenuOpen] = useState(false);
+            const [showShortcuts, setShowShortcuts] = useState(false);
+            const [notification, setNotification] = useState(null);
+            const [focusMode, setFocusMode] = useState(false);
+            const [focusedNode, setFocusedNode] = useState(null);
+            const [minimapMinimized, setMinimapMinimized] = useState(false);
+            const [perfWidgetMinimized, setPerfWidgetMinimized] = useState(false);
+            const [currentView, setCurrentView] = useState('overview');
+            
+            // 初始化节点 - 充分利用空间的布局
+            useEffect(() => {
+                const viewportWidth = window.innerWidth;
+                const viewportHeight = window.innerHeight;
+                const padding = 100;
+                
+                const initialNodes = [
+                    // 第一层 - 前端
+                    {
+                        id: 'frontend',
+                        type: 'service',
+                        position: { x: viewportWidth * 0.2, y: padding },
+                        data: {
+                            label: 'Next.js 前端',
+                            icon: '🌐',
+                            description: 'React 18 + TypeScript',
+                            status: 'healthy',
+                            realtime: true,
+                            metrics: { cpu: 35, memory: 62, requests: 850 }
+                        }
+                    },
+                    {
+                        id: 'mobile',
+                        type: 'service',
+                        position: { x: viewportWidth * 0.5, y: padding },
+                        data: {
+                            label: '移动端 PWA',
+                            icon: '📱',
+                            description: '响应式设计',
+                            status: 'healthy'
+                        }
+                    },
+                    {
+                        id: 'browser-ext',
+                        type: 'service',
+                        position: { x: viewportWidth * 0.8, y: padding },
+                        data: {
+                            label: '浏览器插件',
+                            icon: '🔌',
+                            description: 'Chrome Extension',
+                            status: 'healthy'
+                        }
+                    },
+                    
+                    // 第二层 - 网关
+                    {
+                        id: 'api-gateway',
+                        type: 'service',
+                        position: { x: viewportWidth * 0.5, y: viewportHeight * 0.25 },
+                        data: {
+                            label: 'API 网关',
+                            icon: '🚪',
+                            description: 'Cloudflare Workers',
+                            status: 'healthy',
+                            realtime: true,
+                            sideHandle: true,
+                            metrics: { cpu: 42, memory: 58, requests: 1200 }
+                        }
+                    },
+                    
+                    // 第三层 - 核心服务
+                    {
+                        id: 'queue',
+                        type: 'service',
+                        position: { x: viewportWidth * 0.2, y: viewportHeight * 0.45 },
+                        data: {
+                            label: '任务队列',
+                            icon: '📬',
+                            description: 'CF Queue',
+                            status: 'healthy',
+                            metrics: { pending: 45, processing: 12 }
+                        }
+                    },
+                    {
+                        id: 'whisper',
+                        type: 'ai',
+                        position: { x: viewportWidth * 0.5, y: viewportHeight * 0.45 },
+                        data: {
+                            label: 'Whisper ASR',
+                            icon: '🎤',
+                            description: 'OpenAI Whisper',
+                            status: 'healthy',
+                            metrics: { accuracy: '99.2%', latency: '0.8s' }
+                        }
+                    },
+                    {
+                        id: 'cache',
+                        type: 'database',
+                        position: { x: viewportWidth * 0.8, y: viewportHeight * 0.45 },
+                        data: {
+                            label: 'Redis Cache',
+                            icon: '💾',
+                            description: 'KV Store',
+                            status: 'healthy',
+                            metrics: { hits: '89%', size: '512MB' }
+                        }
+                    },
+                    
+                    // 第四层 - 处理层
+                    {
+                        id: 'video-processor',
+                        type: 'service',
+                        position: { x: viewportWidth * 0.2, y: viewportHeight * 0.65 },
+                        data: {
+                            label: '视频处理',
+                            icon: '🎬',
+                            description: 'yt-dlp + FFmpeg',
+                            status: 'healthy',
+                            realtime: true
+                        }
+                    },
+                    {
+                        id: 'claude-opus',
+                        type: 'ai',
+                        position: { x: viewportWidth * 0.5, y: viewportHeight * 0.65 },
+                        data: {
+                            label: 'Claude 4 Opus',
+                            icon: '🤖',
+                            description: 'Advanced Content Generation',
+                            status: 'healthy',
+                            metrics: { tokens: 2500, cost: '$0.075' }
+                        }
+                    },
+                    {
+                        id: 'database',
+                        type: 'database',
+                        position: { x: viewportWidth * 0.8, y: viewportHeight * 0.65 },
+                        data: {
+                            label: 'PostgreSQL',
+                            icon: '🗄️',
+                            description: 'Supabase',
+                            status: 'healthy',
+                            metrics: { connections: 12, size: '5.2GB' }
+                        }
+                    }
+                ];
+                
+                const initialEdges = [
+                    // 前端到网关
+                    { id: 'e1', source: 'frontend', target: 'api-gateway', animated: true, style: { stroke: '#4FC3F7' } },
+                    { id: 'e2', source: 'mobile', target: 'api-gateway', animated: true, style: { stroke: '#4FC3F7' } },
+                    { id: 'e3', source: 'browser-ext', target: 'api-gateway', animated: true, style: { stroke: '#4FC3F7' } },
+                    
+                    // 网关到服务
+                    { id: 'e4', source: 'api-gateway', target: 'queue', style: { stroke: '#81C784' } },
+                    { id: 'e5', source: 'api-gateway', target: 'whisper', style: { stroke: '#9C27B0' } },
+                    { id: 'e6', source: 'api-gateway', target: 'cache', style: { stroke: '#FFB74D' } },
+                    
+                    // 服务间连接
+                    { id: 'e7', source: 'queue', target: 'video-processor', animated: true, style: { stroke: '#00BCD4' } },
+                    { id: 'e8', source: 'whisper', target: 'claude-opus', animated: true, style: { stroke: '#9C27B0' } },
+                    { id: 'e9', source: 'api-gateway', target: 'database', style: { stroke: '#FFB74D', strokeDasharray: '5 5' } },
+                    
+                    // 处理层连接
+                    { id: 'e10', source: 'video-processor', target: 'whisper', style: { stroke: '#64B5F6' } },
+                    { id: 'e11', source: 'claude-opus', target: 'database', style: { stroke: '#FFB74D' } }
+                ];
+                
+                setNodes(initialNodes);
+                setEdges(initialEdges);
+                
+                // 初始适应视图
+                setTimeout(() => fitView({ padding: 0.1 }), 100);
+            }, []);
+            
+            // 键盘快捷键处理
+            useEffect(() => {
+                const handleKeyPress = (e) => {
+                    // 不处理输入框中的按键
+                    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+                    
+                    switch(e.key.toLowerCase()) {
+                        case 'h':
+                            // 切换面板显示
+                            if (!e.ctrlKey && !e.metaKey) {
+                                setLeftPanelOpen(prev => !prev);
+                                setRightPanelOpen(false);
+                                showNotification('面板已' + (leftPanelOpen ? '隐藏' : '显示'));
+                            }
+                            break;
+                        case 'f':
+                            // 全屏切换
+                            if (!e.ctrlKey && !e.metaKey) {
+                                toggleFullscreen();
+                            }
+                            break;
+                        case ' ':
+                            // 空格 - 适应视图
+                            e.preventDefault();
+                            fitView({ padding: 0.1, duration: 800 });
+                            showNotification('视图已重置');
+                            break;
+                        case '?':
+                            // 显示快捷键帮助
+                            setShowShortcuts(prev => !prev);
+                            break;
+                        case '1':
+                            // 预设视图 - 总览
+                            switchView('overview');
+                            break;
+                        case '2':
+                            // 预设视图 - 前端
+                            switchView('frontend');
+                            break;
+                        case '3':
+                            // 预设视图 - 后端
+                            switchView('backend');
+                            break;
+                        case 'escape':
+                            // ESC - 退出焦点模式/全屏
+                            if (focusMode) {
+                                setFocusMode(false);
+                                setFocusedNode(null);
+                                resetNodeStyles();
+                            }
+                            if (document.fullscreenElement) {
+                                document.exitFullscreen();
+                            }
+                            break;
+                    }
+                };
+                
+                document.addEventListener('keydown', handleKeyPress);
+                return () => document.removeEventListener('keydown', handleKeyPress);
+            }, [leftPanelOpen, focusMode]);
+            
+            // 全屏切换
+            const toggleFullscreen = () => {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen();
+                    showNotification('进入全屏模式');
+                } else {
+                    document.exitFullscreen();
+                    showNotification('退出全屏模式');
+                }
+            };
+            
+            // 显示通知
+            const showNotification = (message) => {
+                setNotification(message);
+                setTimeout(() => setNotification(null), 2000);
+            };
+            
+            // 预设视图切换
+            const switchView = (viewName) => {
+                const views = {
+                    overview: { x: window.innerWidth / 2, y: window.innerHeight / 2, zoom: 0.6 },
+                    frontend: { x: window.innerWidth * 0.3, y: 200, zoom: 1.2 },
+                    backend: { x: window.innerWidth * 0.6, y: 500, zoom: 1.0 }
+                };
+                
+                const view = views[viewName];
+                if (view) {
+                    setViewport({ x: -view.x + window.innerWidth / 2, y: -view.y + window.innerHeight / 2, zoom: view.zoom }, { duration: 800 });
+                    setCurrentView(viewName);
+                    showNotification(`切换到${viewName}视图`);
+                }
+            };
+            
+            // 节点点击处理 - 焦点模式
+            const onNodeClick = useCallback((event, node) => {
+                if (focusMode) {
+                    // 退出焦点模式
+                    setFocusMode(false);
+                    setFocusedNode(null);
+                    resetNodeStyles();
+                } else {
+                    // 进入焦点模式
+                    setFocusMode(true);
+                    setFocusedNode(node.id);
+                    highlightConnectedNodes(node.id);
+                }
+            }, [focusMode]);
+            
+            // 高亮连接的节点
+            const highlightConnectedNodes = (nodeId) => {
+                const connectedEdges = getEdges().filter(edge => 
+                    edge.source === nodeId || edge.target === nodeId
+                );
+                
+                const connectedNodeIds = new Set([nodeId]);
+                connectedEdges.forEach(edge => {
+                    connectedNodeIds.add(edge.source);
+                    connectedNodeIds.add(edge.target);
+                });
+                
+                // 更新节点样式
+                setNodes(nodes => nodes.map(node => ({
+                    ...node,
+                    data: {
+                        ...node.data,
+                        focused: connectedNodeIds.has(node.id),
+                        dimmed: !connectedNodeIds.has(node.id)
+                    }
+                })));
+                
+                // 更新边样式
+                setEdges(edges => edges.map(edge => ({
+                    ...edge,
+                    className: connectedEdges.some(e => e.id === edge.id) ? 'highlighted' : '',
+                    animated: connectedEdges.some(e => e.id === edge.id)
+                })));
+            };
+            
+            // 重置节点样式
+            const resetNodeStyles = () => {
+                setNodes(nodes => nodes.map(node => ({
+                    ...node,
+                    data: {
+                        ...node.data,
+                        focused: false,
+                        dimmed: false
+                    }
+                })));
+                
+                setEdges(edges => edges.map(edge => ({
+                    ...edge,
+                    className: '',
+                    animated: edge.id.startsWith('e1') || edge.id.startsWith('e7') || edge.id.startsWith('e8')
+                })));
+            };
+            
+            // 拖放处理
+            const onDragOver = useCallback((event) => {
+                event.preventDefault();
+                event.dataTransfer.dropEffect = 'move';
+            }, []);
+            
+            const onDrop = useCallback((event) => {
+                event.preventDefault();
+                
+                const reactFlowBounds = reactFlowWrapper.current.getBoundingClientRect();
+                const type = event.dataTransfer.getData('application/reactflow');
+                
+                if (typeof type === 'undefined' || !type) {
+                    return;
+                }
+                
+                const position = project({
+                    x: event.clientX - reactFlowBounds.left,
+                    y: event.clientY - reactFlowBounds.top,
+                });
+                
+                const newNode = {
+                    id: `${type}_${Date.now()}`,
+                    type,
+                    position,
+                    data: getNodeData(type),
+                };
+                
+                setNodes((nds) => nds.concat(newNode));
+                showNotification('节点已添加');
+            }, [project]);
+            
+            // 获取节点默认数据
+            const getNodeData = (type) => {
+                const dataMap = {
+                    service: {
+                        label: '新服务',
+                        icon: '⚙️',
+                        description: '服务描述',
+                        status: 'healthy',
+                        realtime: true
+                    },
+                    database: {
+                        label: '新数据库',
+                        icon: '🗄️',
+                        description: 'Database',
+                        status: 'healthy'
+                    },
+                    ai: {
+                        label: '新AI服务',
+                        icon: '🤖',
+                        description: 'AI Service',
+                        status: 'healthy'
+                    }
+                };
+                return dataMap[type] || { label: '新节点', icon: '📦' };
+            };
+            
+            // 连接处理
+            const onConnect = useCallback((params) => {
+                setEdges((eds) => addEdge({ ...params, animated: true }, eds));
+                showNotification('连接已创建');
+            }, []);
+            
+            // 自动布局
+            const autoLayout = () => {
+                const nodes = getNodes();
+                const viewportWidth = window.innerWidth;
+                const viewportHeight = window.innerHeight;
+                const padding = 100;
+                
+                // 按类型分组
+                const groups = {
+                    frontend: [],
+                    service: [],
+                    database: [],
+                    ai: []
+                };
+                
+                nodes.forEach(node => {
+                    if (node.id.includes('frontend') || node.id.includes('mobile') || node.id.includes('browser')) {
+                        groups.frontend.push(node);
+                    } else if (node.type === 'database') {
+                        groups.database.push(node);
+                    } else if (node.type === 'ai') {
+                        groups.ai.push(node);
+                    } else {
+                        groups.service.push(node);
+                    }
+                });
+                
+                // 分层布局
+                let updatedNodes = [];
+                
+                // 第一层 - 前端
+                groups.frontend.forEach((node, index) => {
+                    node.position = {
+                        x: padding + (viewportWidth - 2 * padding) / (groups.frontend.length + 1) * (index + 1),
+                        y: padding
+                    };
+                    updatedNodes.push(node);
+                });
+                
+                // 第二层 - 服务
+                groups.service.forEach((node, index) => {
+                    node.position = {
+                        x: padding + (viewportWidth - 2 * padding) / (groups.service.length + 1) * (index + 1),
+                        y: viewportHeight * 0.35
+                    };
+                    updatedNodes.push(node);
+                });
+                
+                // 第三层 - AI和数据库
+                [...groups.ai, ...groups.database].forEach((node, index) => {
+                    node.position = {
+                        x: padding + (viewportWidth - 2 * padding) / (groups.ai.length + groups.database.length + 1) * (index + 1),
+                        y: viewportHeight * 0.65
+                    };
+                    updatedNodes.push(node);
+                });
+                
+                setNodes(updatedNodes);
+                setTimeout(() => fitView({ padding: 0.1, duration: 800 }), 100);
+                showNotification('布局已优化');
+            };
+            
+            return (
+                <div style={{ width: '100vw', height: '100vh' }} ref={reactFlowWrapper}>
+                    {/* 左侧面板 - 拖拽节点 */}
+                    <div className={`side-panel left ${leftPanelOpen ? '' : 'collapsed'}`}>
+                        <div className="panel-toggle" onClick={() => setLeftPanelOpen(!leftPanelOpen)}>
+                            {leftPanelOpen ? '◀' : '▶'}
+                        </div>
+                        {leftPanelOpen && (
+                            <div className="panel-content">
+                                <div className="panel-title">节点库</div>
+                                
+                                <DraggableNode type="service" icon="⚙️" name="服务节点" desc="微服务/API" />
+                                <DraggableNode type="database" icon="🗄️" name="数据库" desc="存储服务" />
+                                <DraggableNode type="ai" icon="🤖" name="AI服务" desc="智能处理" />
+                                
+                                <div style={{ marginTop: '24px' }}>
+                                    <div className="panel-title">预设视图</div>
+                                    <div className="view-presets">
+                                        <button className={`preset-btn ${currentView === 'overview' ? 'active' : ''}`} onClick={() => switchView('overview')}>
+                                            总览
+                                        </button>
+                                        <button className={`preset-btn ${currentView === 'frontend' ? 'active' : ''}`} onClick={() => switchView('frontend')}>
+                                            前端
+                                        </button>
+                                        <button className={`preset-btn ${currentView === 'backend' ? 'active' : ''}`} onClick={() => switchView('backend')}>
+                                            后端
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                    
+                    {/* 右侧面板 - 节点详情 */}
+                    <div className={`side-panel right ${rightPanelOpen ? '' : 'collapsed'}`}>
+                        <div className="panel-toggle" onClick={() => setRightPanelOpen(!rightPanelOpen)}>
+                            {rightPanelOpen ? '▶' : '◀'}
+                        </div>
+                        {rightPanelOpen && (
+                            <div className="panel-content">
+                                <div className="panel-title">节点详情</div>
+                                {focusedNode ? (
+                                    <div>
+                                        <p>节点ID: {focusedNode}</p>
+                                        <p>在此显示节点详细信息...</p>
+                                    </div>
+                                ) : (
+                                    <p style={{ opacity: 0.5, fontSize: '12px' }}>点击节点查看详情</p>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                    
+                    {/* 顶部自动隐藏栏 */}
+                    <div className="top-bar">
+                        <div className="top-bar-trigger" />
+                        <div className="top-bar-content">
+                            <button className="top-bar-button" onClick={autoLayout}>
+                                自动布局
+                            </button>
+                            <button className="top-bar-button" onClick={() => fitView({ padding: 0.1, duration: 800 })}>
+                                适应视图
+                            </button>
+                            <button className="top-bar-button" onClick={toggleFullscreen}>
+                                全屏
+                            </button>
+                            <button className="top-bar-button" onClick={() => setShowShortcuts(true)}>
+                                快捷键 (?)
+                            </button>
+                            <button className="top-bar-button" onClick={() => {
+                                setLeftPanelOpen(false);
+                                setRightPanelOpen(false);
+                                showNotification('已进入专注模式');
+                            }}>
+                                专注模式
+                            </button>
+                        </div>
+                    </div>
+                    
+                    {/* FAB 浮动操作按钮 */}
+                    <div className="fab-container">
+                        <div className={`fab-menu ${fabMenuOpen ? 'open' : ''}`}>
+                            <div className="fab-menu-item" onClick={autoLayout}>
+                                📐
+                                <span className="fab-tooltip">自动布局</span>
+                            </div>
+                            <div className="fab-menu-item" onClick={() => fitView({ padding: 0.1, duration: 800 })}>
+                                🎯
+                                <span className="fab-tooltip">适应视图</span>
+                            </div>
+                            <div className="fab-menu-item" onClick={toggleFullscreen}>
+                                🖥️
+                                <span className="fab-tooltip">全屏</span>
+                            </div>
+                            <div className="fab-menu-item" onClick={() => setRightPanelOpen(!rightPanelOpen)}>
+                                📊
+                                <span className="fab-tooltip">详情面板</span>
+                            </div>
+                        </div>
+                        <button className="fab" onClick={() => setFabMenuOpen(!fabMenuOpen)}>
+                            {fabMenuOpen ? '✕' : '⚡'}
+                        </button>
+                    </div>
+                    
+                    {/* React Flow 主体 */}
+                    <ReactFlowComponent
+                        nodes={nodes}
+                        edges={edges}
+                        onNodesChange={onNodesChange}
+                        onEdgesChange={onEdgesChange}
+                        onConnect={onConnect}
+                        onNodeClick={onNodeClick}
+                        onDrop={onDrop}
+                        onDragOver={onDragOver}
+                        nodeTypes={nodeTypes}
+                        fitView
+                        attributionPosition="bottom-left"
+                        className={focusMode ? 'focus-mode' : ''}
+                    >
+                        <Background variant="dots" gap={20} size={1} color="rgba(255,255,255,0.02)" />
+                        <Controls position="bottom-right" />
+                        {!minimapMinimized && (
+                            <MiniMap 
+                                nodeColor={(node) => {
+                                    if (node.type === 'ai') return '#9C27B0';
+                                    if (node.type === 'database') return '#FFB74D';
+                                    return '#4FC3F7';
+                                }}
+                                style={{
+                                    backgroundColor: 'rgba(10, 14, 39, 0.9)',
+                                    border: '1px solid rgba(255, 255, 255, 0.1)'
+                                }}
+                                position="top-right"
+                            />
+                        )}
+                    </ReactFlowComponent>
+                    
+                    {/* 可拖动的迷你地图控制 */}
+                    <div className={`minimap-container ${minimapMinimized ? 'minimized' : ''}`} 
+                         style={{ bottom: '120px', right: '30px', width: minimapMinimized ? '40px' : '200px', height: minimapMinimized ? '40px' : '150px' }}>
+                        <button className="minimap-toggle" onClick={() => setMinimapMinimized(!minimapMinimized)}>
+                            {minimapMinimized ? '📍' : '−'}
+                        </button>
+                    </div>
+                    
+                    {/* 性能监控小组件 */}
+                    <PerformanceWidget minimized={perfWidgetMinimized} setMinimized={setPerfWidgetMinimized} nodes={nodes} edges={edges} />
+                    
+                    {/* 快捷键提示 */}
+                    <div className={`shortcuts-hint ${showShortcuts ? 'visible' : ''}`}>
+                        <div className="shortcuts-title">快捷键指南</div>
+                        <div className="shortcut-item">
+                            <span>切换面板</span>
+                            <span className="shortcut-key">H</span>
+                        </div>
+                        <div className="shortcut-item">
+                            <span>全屏模式</span>
+                            <span className="shortcut-key">F</span>
+                        </div>
+                        <div className="shortcut-item">
+                            <span>适应视图</span>
+                            <span className="shortcut-key">Space</span>
+                        </div>
+                        <div className="shortcut-item">
+                            <span>总览视图</span>
+                            <span className="shortcut-key">1</span>
+                        </div>
+                        <div className="shortcut-item">
+                            <span>前端视图</span>
+                            <span className="shortcut-key">2</span>
+                        </div>
+                        <div className="shortcut-item">
+                            <span>后端视图</span>
+                            <span className="shortcut-key">3</span>
+                        </div>
+                        <div className="shortcut-item">
+                            <span>退出焦点/全屏</span>
+                            <span className="shortcut-key">ESC</span>
+                        </div>
+                        <div className="shortcut-item">
+                            <span>显示此帮助</span>
+                            <span className="shortcut-key">?</span>
+                        </div>
+                        <button 
+                            style={{ marginTop: '12px', width: '100%', padding: '8px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', color: '#e1e1e6', cursor: 'pointer' }}
+                            onClick={() => setShowShortcuts(false)}
+                        >
+                            关闭
+                        </button>
+                    </div>
+                    
+                    {/* 通知 */}
+                    {notification && (
+                        <div className="notification">
+                            {notification}
+                        </div>
+                    )}
+                </div>
+            );
+        }
+        
+        // ==================== 辅助组件 ====================
+        
+        // 可拖拽节点
+        const DraggableNode = ({ type, icon, name, desc }) => {
+            const onDragStart = (event) => {
+                event.dataTransfer.setData('application/reactflow', type);
+                event.dataTransfer.effectAllowed = 'move';
+            };
+            
+            return (
+                <div className="draggable-node-item" draggable onDragStart={onDragStart}>
+                    <span className="node-icon">{icon}</span>
+                    <div className="node-info">
+                        <div className="node-name">{name}</div>
+                        <div className="node-desc">{desc}</div>
+                    </div>
+                </div>
+            );
+        };
+        
+        // 性能监控小组件
+        const PerformanceWidget = ({ minimized, setMinimized, nodes, edges }) => {
+            const [fps, setFps] = useState(60);
+            
+            useEffect(() => {
+                let lastTime = performance.now();
+                let frames = 0;
+                let animationId;
+                
+                const measureFPS = () => {
+                    frames++;
+                    const currentTime = performance.now();
+                    
+                    if (currentTime >= lastTime + 1000) {
+                        setFps(Math.round((frames * 1000) / (currentTime - lastTime)));
+                        frames = 0;
+                        lastTime = currentTime;
+                    }
+                    
+                    animationId = requestAnimationFrame(measureFPS);
+                };
+                
+                measureFPS();
+                
+                return () => {
+                    if (animationId) {
+                        cancelAnimationFrame(animationId);
+                    }
+                };
+            }, []);
+            
+            return (
+                <div className={`perf-widget ${minimized ? 'minimized' : ''}`}>
+                    <div className="perf-widget-header">
+                        <span className="perf-widget-title">{minimized ? '📊' : '系统性能'}</span>
+                        <button 
+                            style={{ background: 'none', border: 'none', color: '#e1e1e6', cursor: 'pointer', fontSize: '16px' }}
+                            onClick={() => setMinimized(!minimized)}
+                        >
+                            {minimized ? '+' : '−'}
+                        </button>
+                    </div>
+                    {!minimized && (
+                        <div className="perf-metrics">
+                            <div className="perf-metric">
+                                <div className="perf-value">{nodes.length}</div>
+                                <div className="perf-label">节点</div>
+                            </div>
+                            <div className="perf-metric">
+                                <div className="perf-value">{edges.length}</div>
+                                <div className="perf-label">连接</div>
+                            </div>
+                            <div className="perf-metric">
+                                <div className="perf-value" style={{ color: fps < 30 ? '#FF5252' : fps < 50 ? '#FFC107' : '#4CAF50' }}>
+                                    {fps}
+                                </div>
+                                <div className="perf-label">FPS</div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+        
+        // 应用包装器
+        function App() {
+            return (
+                <ReactFlowProvider>
+                    <Flow />
+                </ReactFlowProvider>
+            );
+        }
+        
+        // 渲染应用
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
